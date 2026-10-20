@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- Open Graph image template: screenshot at 1200x630 to public/og.png. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/src/styles.css">
+<style>
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  .og { width: 1200px; height: 630px; padding: 56px 64px; display: grid; grid-template-columns: 1fr 560px; gap: 24px; align-items: center; }
+  .og h1 { font-size: 92px; }
+  .og > * { margin: 0; width: 100%; max-width: none; }
+  .og .role { font-size: 28px; max-width: 24ch; }
+  .og .hook { font-size: 21px; max-width: 32ch; margin-top: 22px; }
+  .og .tagline { margin-top: 30px; font-family: var(--mono); font-size: 15px; color: var(--accent); letter-spacing: 0.04em; text-transform: uppercase; }
+  .og .art { position: relative; aspect-ratio: 8 / 7; }
+  .og .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .og .art .l { opacity: 0.6; }
+  .og .art .s { transform: translate(-18px, -22px); filter: drop-shadow(18px 24px 16px rgba(2, 10, 28, 0.6)); }
+  .og .frame { position: absolute; inset: -12px; box-shadow: inset 0 0 0 1px var(--line); }
+</style>
+</head>
+<body>
+<div class="og table">
+  <div>
+    <h1>Bhrugu Mehta</h1>
+    <p class="role">Mechanical Engineering, Texas A&amp;M, Class of 2030</p>
+    <p class="hook">Designing, simulating, and building vehicles that go fast, from CAD and CFD to the shop floor.</p>
+    <p class="tagline">Texas A&amp;M · Formula SAE Electric · Design Build Fly</p>
+  </div>
+  <div class="art">
+    <span class="frame"></span>
+    <img class="l" src="/img/pedal/hero-lines-1600.webp" alt="">
+    <img class="s" src="/img/pedal/hero-solid-1600.webp" alt="">
+  </div>
+</div>
+</body>
+</html>

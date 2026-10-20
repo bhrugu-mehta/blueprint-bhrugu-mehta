@@ -1,0 +1,134 @@
+<!doctype html>
+<!-- Renders the hero artwork from the CAD model: white linework (blueprint) and the
+     shaded model, from one camera, plus screen positions of key features.
+     Used by scripts/hero-render.mjs; open in the dev server to preview. -->
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#0d3b7a}</style></head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+const W = 1600, H = 1400;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const key = new THREE.DirectionalLight(0xffffff, 2.4);
+scene.add(key, new THREE.HemisphereLight(0xffffff, 0x223355, 0.5));
+
+const draco = new DRACOLoader().setDecoderPath('/draco/');
+const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync('/models/brake-pedal.glb');
+const model = gltf.scene;
+scene.add(model);
+
+const box = new THREE.Box3().setFromObject(model);
+const centre = box.getCenter(new THREE.Vector3());
+const radius = box.getSize(new THREE.Vector3()).length() / 2;
+const camera = new THREE.PerspectiveCamera(24, W / H, radius / 50, radius * 50);
+const dir = new THREE.Vector3(1.25, 0.42, 0.95).normalize();
+camera.position.copy(centre).addScaledVector(dir, radius / Math.sin((24 * Math.PI) / 360) * 1.0);
+camera.lookAt(centre.clone().add(new THREE.Vector3(0, -radius * 0.04, 0)));
+key.position.copy(centre).add(new THREE.Vector3(radius * 2, radius * 4, radius * 3));
+key.target.position.copy(centre); scene.add(key.target);
+
+const meshes = [];
+model.traverse((o) => { if (o.isMesh) meshes.push(o); });
+
+// 1. Shaded model, transparent background.
+renderer.setClearColor(0x000000, 0);
+renderer.render(scene, camera);
+const solid = renderer.domElement.toDataURL('image/png');
+
+// 2. View-space normals and linear depth in one float pass (exact values, no packing).
+const gbufMat = new THREE.ShaderMaterial({
+  vertexShader: `varying vec3 vN; varying float vZ;
+    void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); vZ = -mv.z; vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying vec3 vN; varying float vZ;
+    void main() { vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n; gl_FragColor = vec4(n, vZ); }`,
+  side: THREE.DoubleSide,
+});
+const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.FloatType });
+{
+  const orig = meshes.map((m) => m.material);
+  meshes.forEach((m) => (m.material = gbufMat));
+  const env = scene.environment; scene.environment = null;
+  renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear();
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  meshes.forEach((m, i) => (m.material = orig[i])); scene.environment = env;
+}
+const gbuf = new Float32Array(W * H * 4);
+renderer.readRenderTargetPixels(rt, 0, 0, W, H, gbuf);
+
+// 3. Crease edges with hidden lines removed (depth-only meshes occlude them).
+const lineScene = new THREE.Scene();
+const occluder = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+model.updateMatrixWorld(true);
+for (const m of meshes) {
+  const occ = new THREE.Mesh(m.geometry, occluder); occ.matrixAutoUpdate = false; occ.matrix.copy(m.matrixWorld); lineScene.add(occ);
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), lineMat);
+  edges.matrixAutoUpdate = false; edges.matrix.copy(m.matrixWorld); lineScene.add(edges);
+}
+renderer.setClearColor(0x000000, 0);
+renderer.render(lineScene, camera);
+const gl = renderer.getContext();
+const crease = new Uint8Array(W * H * 4);
+gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, crease);
+
+// 4. Combine: silhouettes (coverage/depth jumps), creases (normal jumps) + mesh crease lines.
+const out = new ImageData(W, H);
+const COS = Math.cos((32 * Math.PI) / 180);
+for (let y = 1; y < H - 1; y++) {
+  for (let x = 1; x < W - 1; x++) {
+    const i = (y * W + x) * 4;
+    const z0 = gbuf[i + 3];
+    let e = 0;
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+      const j = ((y + dy) * W + (x + dx)) * 4;
+      const z1 = gbuf[j + 3];
+      if ((z0 > 0) !== (z1 > 0)) { e = 1; break; }
+      if (z0 <= 0) continue;
+      if (Math.abs(z0 - z1) > 0.012 * z0) { e = 1; break; }
+      const d = gbuf[i] * gbuf[j] + gbuf[i + 1] * gbuf[j + 1] + gbuf[i + 2] * gbuf[j + 2];
+      if (d < COS) e = Math.max(e, 0.75);
+    }
+    const c = (crease[i + 3] / 255) * 0.6;
+    const v = Math.max(e, c);
+    const o = ((H - 1 - y) * W + x) * 4; // GL rows are bottom-up
+    out.data[o] = out.data[o + 1] = out.data[o + 2] = 255;
+    out.data[o + 3] = Math.round(v * 255);
+  }
+}
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+cv.getContext('2d').putImageData(out, 0, 0);
+const lines = cv.toDataURL('image/png');
+
+// 5. Screen positions (0..1) of features for the dimension callouts.
+const find = (re) => { let n = null; model.traverse((o) => { if (!n && re.test(o.userData.name || o.name)) n = o; }); return n; };
+const proj = (v) => { const p = v.clone().project(camera); return [+(p.x * 0.5 + 0.5).toFixed(4), +(0.5 - p.y * 0.5).toFixed(4)]; };
+const bb = (n) => new THREE.Box3().setFromObject(n);
+const arm = bb(find(/^Arm\^/)), bar = bb(find(/BALANCE BAR/)), mc = bb(find(/Master Cylinder/)), base = bb(find(/^Part1\^/)), sw = bb(find(/8382K103/));
+const c = (b) => b.getCenter(new THREE.Vector3());
+const anchors = {
+  pad: proj(new THREE.Vector3(c(arm).x, arm.max.y - (arm.max.y - arm.min.y) * 0.12, c(arm).z)),
+  armMid: proj(new THREE.Vector3(c(arm).x, arm.min.y + (arm.max.y - arm.min.y) * 0.5, c(arm).z)),
+  pivot: proj(new THREE.Vector3(c(arm).x, arm.min.y + (arm.max.y - arm.min.y) * 0.08, c(arm).z)),
+  balanceBar: proj(c(bar)),
+  masterCylinder: proj(c(mc)),
+  switch: proj(c(sw)),
+  baseCorner: proj(new THREE.Vector3(base.max.x, base.min.y, base.max.z)),
+  baseFar: proj(new THREE.Vector3(base.min.x, base.min.y, base.max.z)),
+};
+window.__out = { solid, lines, anchors, size: [W, H] };
+</script>
+</body></html>
