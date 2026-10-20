@@ -256,7 +256,7 @@ ${header(root, 'home')}
     <div class="contact-grid">
       ${pop(root, 'gokart/IMG_0519.JPG', 'The finished wood go-kart parked in the garage, seen from the side', { sizes: '(min-width: 1000px) 55vw, 100vw', tag: 'Detail C', caption: 'Wood go-kart: 24 mph, 175 lb, 12 hp', cls: 'contact-pop' })}
       <div class="card" data-reveal>
-        <p class="card-lead">Looking for a mechanical engineering internship for summer 2027.</p>
+        <p class="card-lead">Always open to gain more experience.</p>
         <a class="big-mail" href="mailto:${site.email}">${site.email}</a>
         <ul class="card-rows">
           <li><span>Also</span><a href="mailto:${site.emailSecondary}">${site.emailSecondary}</a></li>
