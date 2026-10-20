@@ -23,13 +23,6 @@ const dir = path.join(root, 'images', 'pedal');
 const save = (name, dataUrl) => fs.writeFileSync(path.join(dir, name), Buffer.from(dataUrl.split(',')[1], 'base64'));
 save('hero-solid.png', solid);
 save('hero-lines.png', lines);
-// Thicken the 1px linework slightly so it survives being scaled down on the page.
-const linesPath = path.join(dir, 'hero-lines.png');
-const { data, info } = await sharp(linesPath).ensureAlpha().extractChannel(3).dilate(1).blur(0.5).raw().toBuffer({ resolveWithObject: true });
-const rgba = Buffer.alloc(info.width * info.height * 4);
-for (let i = 0; i < info.width * info.height; i++) { rgba.fill(255, i * 4, i * 4 + 3); rgba[i * 4 + 3] = Math.min(255, Math.round(data[i] * 1.15)); }
-await sharp(rgba, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toFile(linesPath + '.tmp');
-fs.renameSync(linesPath + '.tmp', linesPath);
 // Trimmed cut-out used as the project cover.
 await sharp(path.join(dir, 'hero-solid.png')).trim({ threshold: 1 }).extend({ top: 40, bottom: 40, left: 40, right: 40, background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toFile(path.join(dir, 'cover-solid.png'));
 fs.writeFileSync(path.join(root, 'src', 'hero-anchors.json'), JSON.stringify({ size, anchors }, null, 1));
