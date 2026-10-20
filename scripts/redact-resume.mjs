@@ -1,6 +1,7 @@
-// Makes public/resume.pdf from source/Bhrugu_Mehta_Resume.pdf with the phone number and
-// street addresses removed (true redaction: the text is deleted, not just covered).
-// Run with `npm run resume` whenever the source resume changes.
+// Makes public/resume.pdf from source/Bhrugu_Mehta_Resume.pdf.
+//   npm run resume            -> publishes the resume as is, full contact details included
+//   npm run resume:redacted   -> removes the phone number and street addresses first
+//                                (true redaction: the text is deleted, not just covered)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,13 @@ const REMOVE = [
   '425-900-4584',
   '400 Bizzell St, College Station, TX 77840',
 ];
+
+if (!process.argv.includes('--redact')) {
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.copyFileSync(src, out);
+  console.log('resume: published with full contact details -> public/resume.pdf');
+  process.exit(0);
+}
 
 const doc = mupdf.Document.openDocument(fs.readFileSync(src), 'application/pdf');
 let hits = 0;

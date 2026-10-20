@@ -56,16 +56,15 @@ node scripts/hero-render.mjs
 
 ## Update the resume
 
-The hosted resume has the phone number and street addresses removed. When your resume changes,
-replace `source/Bhrugu_Mehta_Resume.pdf` and run:
+The site serves `public/resume.pdf`. When your resume changes, replace
+`source/Bhrugu_Mehta_Resume.pdf` and run:
 
 ```bash
 npm run resume
 ```
 
-It writes `public/resume.pdf` and refuses to finish if any phone or address text is left.
-(Better still: export a version without those lines from the original document and save it
-as `public/resume.pdf` directly.) `source/` is git-ignored so the originals never go public.
+That publishes it as is, with your full contact details. To publish a copy without the phone number
+and street addresses instead, run `npm run resume:redacted`. `source/` itself is git-ignored.
 
 ## Deploy to GitHub Pages
 

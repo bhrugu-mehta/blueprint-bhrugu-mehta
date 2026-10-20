@@ -25,7 +25,7 @@ Recruiters open it from LinkedIn or a resume link, frequently on mobile. Content
 - Interactive 3D viewer (orbit/zoom/pan, auto-rotate, reset, lazy load, click a part to label it) for GLBs in /models.
 - Projects without a model must look complete with photos alone; adding a model is one config line.
 - Lighthouse performance > 90; responsive; respects prefers-reduced-motion.
-- Privacy: no phone number or street address anywhere, including the hosted resume.
+- Privacy: no phone number or street address on the web pages. The downloadable resume.pdf carries the full original header (phone and address) by the user's choice on 2026-10-20.
 
 ## Brand Commitments
 Name: Bhrugu Mehta. Hook: "Designing, simulating, and building vehicles that go fast, from CAD and CFD to the shop floor." Feel: an engineer's site, precise, technical, confident; not a template. The 3D models and build photos are the stars; the design frames them.

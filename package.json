@@ -10,7 +10,8 @@
     "prebuild": "node scripts/build-assets.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "resume": "node scripts/redact-resume.mjs"
+    "resume": "node scripts/redact-resume.mjs",
+    "resume:redacted": "node scripts/redact-resume.mjs --redact"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
