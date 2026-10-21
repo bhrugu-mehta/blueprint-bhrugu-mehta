@@ -21,12 +21,18 @@ export function intro() {
   btn.focus({ preventScroll: true });
 
   let started = false;
+  let played = false;
   const play = () => {
+    if (played) return;
+    played = true;
     // Let the hero drawing start plotting while the sheet is still unrolling.
     root.classList.remove('intro-hold');
     window.dispatchEvent(new Event('intro:play'));
   };
+  let finished = false;
   const finish = () => {
+    if (finished) return;
+    finished = true;
     try { sessionStorage.setItem('bm-intro', '1'); } catch (e) { /* private mode */ }
     behind.forEach((n) => n.removeAttribute('inert'));
     root.classList.remove('has-intro', 'intro-hold');
@@ -38,6 +44,9 @@ export function intro() {
     if (started) return;
     started = true;
     el.classList.add('opening');
+    // Safety net: if the browser throttles animations (low-power mode, background tab),
+    // the page still opens within 1.5 s of the click.
+    setTimeout(() => { play(); finish(); }, 1500);
 
     // 1. Title and button step back; the roll detaches from the layout where it sits.
     extras.forEach((n, i) => n.animate(
