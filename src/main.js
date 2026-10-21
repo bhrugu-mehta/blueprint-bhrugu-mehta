@@ -185,3 +185,13 @@ reveals();
 tilt();
 heroDrawing();
 viewers();
+
+/* Ambient background sketching, loaded after the page is done so it never slows first paint. */
+function backgroundSketches() {
+  const host = document.querySelector('main.table');
+  if (!host || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const go = () => setTimeout(() => import('./sketch.js').then((m) => m.startSketches(host)), 1200);
+  if (document.readyState === 'complete') go();
+  else window.addEventListener('load', go, { once: true });
+}
+backgroundSketches();
