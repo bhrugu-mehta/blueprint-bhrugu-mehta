@@ -491,3 +491,71 @@ h1 { font-size: var(--step-display); letter-spacing: -0.035em; line-height: 0.92
   .pop-stage, .layer { transition: none; }
   .curtain { position: relative; }
 }
+
+/* ───────── Intro: a rolled blueprint, unrolled on click (src/intro.js) ───────── */
+.intro { display: none; }
+html.has-intro { overflow: hidden; }
+html.has-intro .intro { display: block; position: fixed; inset: 0; z-index: 100; cursor: pointer; }
+/* Hold the hero's plot sequence until the sheet is unrolled. */
+html.intro-hold .hero *, html.intro-hold .hero *::before, html.intro-hold .hero *::after { animation-play-state: paused !important; }
+.intro-backdrop {
+  position: absolute; inset: 0; background-color: var(--bp-deep);
+  background-image: linear-gradient(var(--grid-minor) 1px, transparent 1px), linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.intro-backdrop::before { content: ''; position: absolute; inset: clamp(12px, 2vw, 24px); box-shadow: inset 0 0 0 1px var(--line); }
+.intro-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 2vw, 22px); padding: 24px; text-align: center; }
+.intro-dwg { font-family: var(--mono); font-size: var(--step-tag); color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; }
+.intro-name { font-size: clamp(2.75rem, 1.4rem + 5vw, 6rem); font-weight: 700; font-stretch: 118%; letter-spacing: -0.035em; line-height: 0.95; }
+.intro-role { color: var(--muted); max-width: 34ch; margin-bottom: clamp(18px, 3vw, 36px); }
+.intro-roll {
+  --h: clamp(56px, 6.5vw, 80px);
+  position: relative; z-index: 2; width: min(720px, 76vw); height: var(--h); margin: 0 auto clamp(18px, 3vw, 36px);
+  display: flex; filter: drop-shadow(0 22px 24px rgba(0, 6, 20, 0.65));
+}
+.intro-roll .cap { position: absolute; top: 0; height: 100%; width: calc(var(--h) * 0.44); overflow: visible; }
+.intro-roll .cap.l { left: calc(var(--h) * -0.22); }
+.intro-roll .cap.r { right: calc(var(--h) * -0.22); }
+.intro-roll svg path, .intro-roll svg ellipse { fill: none; stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.intro-roll svg .fill { fill: var(--bp-deep); stroke: none; }
+.intro-roll .cap.r ellipse.fill { stroke: var(--ink); }
+.intro-roll .hidden-edge { stroke: var(--line-strong); stroke-dasharray: 4 4; }
+.intro-roll .spiral { stroke: var(--muted); stroke-width: 1; }
+.roll-body {
+  position: relative; flex: 1; overflow: hidden;
+  border-top: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink);
+  /* Cylinder shading the drafting way: lines parallel to the axis, denser toward the edges. */
+  background-color: var(--bp-deep);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(var(--line) 1px, transparent 1px);
+  background-repeat: no-repeat; background-size: 100% 1px;
+  background-position: 0 7%, 0 14%, 0 23%, 0 77%, 0 86%, 0 93%;
+  display: grid; place-items: center;
+}
+/* Dash-dot centre axis. */
+.roll-body::before {
+  content: ''; position: absolute; left: 12px; right: 12px; top: 50%; height: 1px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 22px, transparent 22px 28px, var(--line-strong) 28px 31px, transparent 31px 37px);
+}
+/* Surface lines streaming past while it rolls. */
+.roll-body::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(226, 238, 255, 0.16) 0 1px, transparent 1px 11px); opacity: 0; transition: opacity 300ms ease; }
+.intro-roll.spinning .roll-body::after { opacity: 1; animation: roll-spin 90ms linear infinite; }
+.roll-label { position: relative; z-index: 1; padding: 2px 10px; background: var(--bp-deep); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.16em; color: var(--muted); }
+.intro-roll.spinning .roll-label { opacity: 0; transition: opacity 200ms ease; }
+@keyframes roll-spin { to { background-position: 0 11px; } }
+.intro-enter { gap: 0.6em; }
+.intro-hint { font-family: var(--mono); font-size: var(--step-tag); color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  html.has-intro .intro-stage > * { animation: rise 500ms var(--ease-out) both; }
+  html.has-intro .intro-stage > :nth-child(2) { animation-delay: 40ms; }
+  html.has-intro .intro-stage > :nth-child(3) { animation-delay: 80ms; }
+  html.has-intro .intro-stage > :nth-child(4) { animation: roll-in 600ms var(--ease-plot) 100ms both; }
+  html.has-intro .intro-stage > :nth-child(5) { animation-delay: 220ms; }
+  html.has-intro .intro-stage > :nth-child(6) { animation-delay: 260ms; }
+}
+/* The roll draws itself open from the centre. */
+@keyframes roll-in { from { clip-path: inset(-40px 50% -40px 50%); } to { clip-path: inset(-40px -60px -40px -60px); } }
+/* Once opening, the roll is driven by script; drop its entrance animation. */
+.intro.opening .intro-roll { animation: none !important; }

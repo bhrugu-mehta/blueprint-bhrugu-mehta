@@ -111,6 +111,63 @@ function footer(root) {
 
 /* ───────────────────────────── Home ───────────────────────────── */
 
+/* Intro: a rolled blueprint the visitor clicks to unroll (src/intro.js). Shown on the home page,
+   once per visit; skipped for deep links (#section) and reduced motion. The inline script runs
+   before first paint so the page never flashes, and lifts the screen if the site script fails. */
+const introScript = `
+<script>
+(function () {
+  try {
+    var d = document.documentElement;
+    if (sessionStorage.getItem('bm-intro') || location.hash || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    d.classList.add('has-intro', 'intro-hold');
+    setTimeout(function () { if (!window.__introReady) d.classList.remove('has-intro', 'intro-hold'); }, 6000);
+  } catch (e) {}
+})();
+</script>`;
+
+/* The rolled sheet as a drafting drawing: outline, dash-dot axis, a spiral end and a
+   half-ellipse end with its hidden edge dashed. Caps keep their shape while the body stretches. */
+function rollDrawing() {
+  // Archimedean spiral (4 turns) in a unit circle; the cap squashes it into the end ellipse.
+  const pts = [];
+  for (let t = 0; t <= Math.PI * 8; t += 0.12) {
+    const rr = 4 + (t / (Math.PI * 8)) * 40;
+    pts.push(`${(rr * Math.cos(t)).toFixed(2)} ${(rr * Math.sin(t)).toFixed(2)}`);
+  }
+  const spiral = 'M' + pts.join(' L');
+  return `<div class="intro-roll" aria-hidden="true">
+      <svg class="cap l" viewBox="0 0 44 100" preserveAspectRatio="none">
+        <path class="fill" d="M22 1 A21 49 0 0 0 22 99 L44 99 L44 1 Z" />
+        <path d="M22 1 A21 49 0 0 0 22 99" />
+        <path class="hidden-edge" d="M22 1 A21 49 0 0 1 22 99" />
+      </svg>
+      <span class="roll-body"><span class="roll-label">BM · 2030</span></span>
+      <svg class="cap r" viewBox="0 0 44 100" preserveAspectRatio="none">
+        <ellipse class="fill" cx="22" cy="50" rx="21" ry="49" />
+        <g transform="translate(22 50) scale(0.43 1)">
+          <g><path class="spiral" d="${spiral}" />
+            <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="0.3s" repeatCount="indefinite" begin="indefinite" />
+          </g>
+        </g>
+      </svg>
+    </div>`;
+}
+
+function introScreen() {
+  return `<div class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-name">
+  <div class="intro-backdrop"></div>
+  <div class="intro-stage">
+    <p class="intro-dwg">DWG BM-2030 · Sheet 1 of 1 · Rev. ${esc(site.revised)}</p>
+    <p class="intro-name" id="intro-name">${esc(site.name)}</p>
+    <p class="intro-role">${esc(site.title)}</p>
+    ${rollDrawing()}
+    <button class="btn intro-enter" type="button">Unroll the blueprint <span aria-hidden="true">↓</span></button>
+    <p class="intro-hint">Click anywhere or press Enter</p>
+  </div>
+</div>`;
+}
+
 function heroDrawing(root) {
   const { anchors: a, size: [W, H] } = loadJSON('./hero-anchors.json');
   const P = (k) => [a[k][0] * W, a[k][1] * H];
@@ -178,8 +235,9 @@ export function renderHome() {
     </article>`;
 
   return {
-    head: head(root, { title: `${site.name}: Mechanical Engineering Portfolio`, description: site.description }),
+    head: head(root, { title: `${site.name}: Mechanical Engineering Portfolio`, description: site.description }) + introScript,
     body: `
+${introScreen()}
 ${header(root, 'home')}
 <main id="main" class="table">
   <section class="hero" aria-labelledby="hero-title">

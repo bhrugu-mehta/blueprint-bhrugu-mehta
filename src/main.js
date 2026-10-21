@@ -1,3 +1,5 @@
+import { intro } from './intro.js';
+
 // Client-side behaviour: scroll entrances, count-up numbers, cursor tilt, the hero
 // drawing's parallax and coordinate readout, and the lazy 3D viewer.
 // Everything here is progressive: the pages are complete without it.
@@ -60,9 +62,11 @@ function reveals() {
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => setTimeout(sweep, 120)); } };
   window.addEventListener('scroll', onScroll, { passive: true });
   // Numbers already on screen (the hero) count up on load.
-  document.querySelectorAll('[data-count]').forEach((c) => {
+  const countHero = () => document.querySelectorAll('[data-count]').forEach((c) => {
     if (!c.closest('.pending')) setTimeout(() => countUp(c), 600);
   });
+  if (document.documentElement.classList.contains('intro-hold')) window.addEventListener('intro:play', countHero, { once: true });
+  else countHero();
 }
 
 /* Photos tilt a few degrees toward the cursor, as if lifted off the sheet. */
@@ -181,6 +185,7 @@ function viewers() {
   });
 }
 
+intro();
 reveals();
 tilt();
 heroDrawing();
